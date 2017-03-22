@@ -123,19 +123,14 @@ type preamble struct {
 	ErrorMessage  string
 }
 
-var App *cli.App
-
 func startPlugin(srv server, m meta, p *pluginProxy) int {
-	if App == nil {
-		App = cli.NewApp()
-	}
-	App.Name = m.Name
-	App.Version = strconv.Itoa(m.Version)
-	App.Usage = "A Snap " + getPluginType(m.Type) + " plugin"
-	App.Flags = append(App.Flags, []cli.Flag{flConfig, flPort, flPingTimeout, flPprof}...)
-	// App.Flags = []cli.Flag{flConfig, flPort, flPingTimeout, flPprof}
+	app := cli.NewApp()
+	app.Name = m.Name
+	app.Version = strconv.Itoa(m.Version)
+	app.Usage = "A Snap " + getPluginType(m.Type) + " plugin"
+	app.Flags = []cli.Flag{flConfig, flPort, flPingTimeout, flPprof}
 
-	App.Action = func(c *cli.Context) error {
+	app.Action = func(c *cli.Context) error {
 		if c.NArg() > 0 {
 			printPreamble(srv, m, p)
 		} else { //implies run diagnostics
@@ -163,7 +158,7 @@ func startPlugin(srv server, m meta, p *pluginProxy) int {
 
 		return nil
 	}
-	App.Run(os.Args)
+	app.Run(os.Args)
 
 	return 0
 }
@@ -246,7 +241,6 @@ func showDiagnostics(m meta, p *pluginProxy, c Config) error {
 func printMetricTypes(p *pluginProxy, conf Config) []Metric {
 	defer timeTrack(time.Now(), "printMetricTypes")
 	met, err := p.plugin.(Collector).GetMetricTypes(conf)
-	fmt.Printf("$$$$$ Length: %v\n", len(met))
 	if err != nil {
 		log.Printf("There was an error in the call to GetMetricTypes. Please ensure your config contains any required fields mentioned in the error below. \n %v", err)
 		os.Exit(1)
@@ -256,7 +250,7 @@ func printMetricTypes(p *pluginProxy, conf Config) []Metric {
 	for i := range met {
 		met[i].Config = conf
 
-		//check to ensure config got put in
+		// //check to ensure config got put in
 		// for k, v := range j.Config {
 		// 	switch vv := v.(type) {
 		// 	case string:
@@ -277,9 +271,8 @@ func printMetricTypes(p *pluginProxy, conf Config) []Metric {
 
 	}
 
-	//fmt.Printf("Metric array: %v\n", met)
-
 	fmt.Println("Metric catalog will be updated to include: ")
+
 	for _, j := range met {
 		fmt.Printf("    Namespace: %v \n", j.Namespace.String())
 	}
